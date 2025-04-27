@@ -1,1 +1,510 @@
+classdef new_board < matlab.apps.AppBase
 
+    % Properties that correspond to app components
+    properties (Access = public)
+        figure1               matlab.ui.Figure
+        Arduino               matlab.ui.container.Menu
+        Connect               matlab.ui.container.Menu
+        Disconnect            matlab.ui.container.Menu
+        ConnectMotorMenu      matlab.ui.container.Menu
+        drawpathButton        matlab.ui.control.StateButton
+        DrawBoardButton       matlab.ui.control.StateButton
+        PlanDXformpathButton  matlab.ui.control.StateButton
+        Create                matlab.ui.control.Button
+        axes1                 matlab.ui.control.UIAxes
+    end
+
+
+    properties (Access = private)
+        device =[] % Arduino connection
+        robot =[] % Connection to the robot via Serial Link
+        S=[];
+        S1=[]
+        S3=[]
+        jointangle =[0 0];
+        data_available = false;
+        base_joint = 0;
+        path
+        path1
+        path2
+        path3
+        path4
+        path5
+        path6
+        path7
+        path8
+    end
+
+    methods (Access = private)
+        function Board(app)
+            points = 15;
+            top_point= 6;
+            bottem_point= -6;
+
+            vertical= -10; % Center x-coordinate
+            horizontal=8; % Center y-coordinate
+            shift =2; % distance between lines4
+
+            disp("line1")
+            xn1 = vertical * ones(1, points) - shift;
+            yn1 = linspace(horizontal + bottem_point, horizontal + top_point, points);
+            app.S3.writePosition(.5)
+            for i = 1:length(xn1)
+                U = [0 -1 0 xn1(i);1 0 0 yn1(i);0 0 1 0;0 0 0 1];
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(xn1(i), yn1(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                   
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                    
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                app.S.writePosition(r1)
+                app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    app.S3.writePosition(.2)
+                end
+
+            end
+            app.S3.writePosition(.5);
+            disp("line2")
+            xn2 = vertical * ones(1, points) + shift;
+            yn2 = linspace(horizontal + bottem_point, horizontal + top_point, points);
+            for i = 1:length(xn2)
+                U = [0 -1 0 xn2(i);1 0 0 yn2(i);0 0 1 0;0 0 0 1];
+
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(xn2(i), yn2(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                    
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                   
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                app.S.writePosition(r1);
+                app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    app.S3.writePosition(.2)
+                end
+            end
+            app.S3.writePosition(.5);
+            disp("line3")
+            xn3 = linspace(vertical + bottem_point, vertical + top_point, points);
+            yn3 = horizontal * ones(1, points) - shift;
+            for i = 1:length(xn3)
+                U = [0 -1 0 xn3(i);1 0 0 yn3(i);0 0 1 0;0 0 0 1];
+
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(xn3(i), yn3(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                    
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                   
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                app.S.writePosition(r1);
+                app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    app.S3.writePosition(.2)
+                end
+            end
+            %
+            disp("line4")
+            app.S3.writePosition(.5);
+            xn4 = linspace(vertical + bottem_point, vertical + top_point, points);
+            yn4 = horizontal * ones(1, points) + shift;
+            for i = 1:length(xn4)
+                U = [0 -1 0 xn4(i);1 0 0 yn4(i);0 0 1 0;0 0 0 1];
+
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(xn4(i), yn4(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                    
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                    
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                app.S.writePosition(r1);
+                app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    app.S3.writePosition(.2)
+                end
+            end
+            app.S3.writePosition(.5);
+        end
+
+        function DXpath(app)
+            map =zeros(20,20);
+            map(6, 4:16) = 1;
+            map(10, 4:16) = 1;
+            map(2:14,8)=1;
+            map(2:14,12)=1;
+
+            start = [10; 12];
+            goal1 = [15; 12];
+            goal2 = [15; 8];
+            goal3 = [15; 4];
+            goal4 = [10; 4];
+            goal5 = [5; 4];
+            goal6 = [5; 8];
+            goal7 = [5; 12];
+            goal8 = [10; 12];
+
+            figure(1);
+            dx = DXform(map);
+            hold on
+            figure Name DXform
+            dx.plot();
+
+            dx.plan(goal1);
+            app.path1 =dx.query(start, 'animate')';
+
+            dx.plan(goal2);
+            app.path2=dx.query(goal1, 'animate')';
+
+            dx.plan(goal3);
+            app.path3=dx.query(goal2, 'animate')';
+
+            dx.plan(goal4);
+            app.path4=dx.query(goal3, 'animate')';
+
+            dx.plan(goal5);
+            app.path5=dx.query(goal4, 'animate')';
+
+            dx.plan(goal6);
+            app.path6=dx.query(goal5, 'animate')';
+
+            dx.plan(goal7);
+            app.path7=dx.query(goal6, 'animate')';
+
+            dx.plan(goal8);
+            app.path8=dx.query(goal7, 'animate')';
+
+
+            plot(app.path1(1,:),app.path1(2,:),'Color', 'y', 'LineWidth', 2)
+            plot(app.path2(1,:),app.path2(2,:),'Color', 'y', 'LineWidth', 2)
+            plot(app.path3(1,:),app.path3(2,:),'Color', 'y', 'LineWidth', 2)
+            plot(app.path4(1,:),app.path4(2,:),'Color', 'y', 'LineWidth', 2)
+            plot(app.path5(1,:),app.path5(2,:),'Color', 'y', 'LineWidth', 2)
+            plot(app.path6(1,:),app.path6(2,:),'Color', 'y', 'LineWidth', 2)
+            plot(app.path7(1,:),app.path7(2,:),'Color', 'y', 'LineWidth', 2)
+            plot(app.path8(1,:),app.path8(2,:),'Color', 'y', 'LineWidth', 2)
+
+        end
+
+        function robot_plotting(app)
+            x =-app.path(1,:);
+            y =app.path(2,:);
+            for i = 1:length(x)
+                U = [0 -1 0 x(i);1 0 0 y(i);0 0 1 0;0 0 0 1];
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(x(i), y(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                app.S.writePosition(r1)
+                app.S1.writePosition(r2)
+            end
+        end
+       
+        function draw_robot(app)
+            app.S3.writePosition(.2)
+            app.path =app.path1;
+            robot_plotting(app)
+            app.path =app.path2;
+            robot_plotting(app)
+            app.path =app.path3;
+            robot_plotting(app)
+            app.path =app.path4;
+            robot_plotting(app)
+            app.path =app.path5;
+            robot_plotting(app)
+            app.path =app.path6;
+            robot_plotting(app)
+            app.path =app.path7;
+            robot_plotting(app)
+            app.path =app.path8;
+            robot_plotting(app)
+        end
+    end
+
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Menu selected function: Connect
+        function Connect_Callback(app, event)
+            com = char (inputdlg ('What COM Port?' , 'COM Select', 1, {'COM11'}));
+            try
+                app.device = arduino (com, 'uno', 'libraries', 'Servo');
+            catch
+                msgbox ('Port failed', com, 'Error');
+                return;
+            end
+            app.data_available = true;
+            msgbox ('Port successfully opened');
+        end
+
+        % Button pushed function: Create
+        function Create_Callback(app, event)
+            L(1) = Link ('d',2, 'a', 10, 'alpha', 0,'offset',0);%deg2rad(18.435));
+            L(2) = Link ('d', 0.6, 'a',11, 'alpha', 0,'offset',0);%deg2rad(19));
+            L(1).qlim = [0 pi];           % Joint 1: 0 to pi
+            L(2).qlim = [pi/2 3*pi/2];     % Joint 2: pi/2 to 3*pi/2
+            app.robot = SerialLink(L, 'name', '2-Link Robot');
+
+            app.robot.plot(app.jointangle); % Plot the robot
+            xlim([-20 25])
+            ylim([-10 20])
+        end
+
+        % Menu selected function: Disconnect
+        function Disconnect_Callback(app, event)
+            try
+                app.device.delete;
+            catch
+                msgbox('someing went wrong with port close.')
+                return;
+            end
+            msgbox ('Device deleted');
+            
+            
+        end
+
+        % Menu selected function: ConnectMotorMenu
+        function ConnectMotor(app, event)
+            if (app.data_available)
+                app.S = app.device.servo( 'D3', 'MinPulseDuration', 660e-6, 'MaxPulseDuration', 2425e-6);
+                app.S1 = app.device.servo( 'D5', 'MinPulseDuration', 660e-6, 'MaxPulseDuration', 2425e-6);
+                app.S3 = app.device.servo('D6', 'MinPulseDuration', 1500e-6, 'MaxPulseDuration', 1900e-6);
+            end
+        end
+
+        % Value changed function: DrawBoardButton
+        function DrawBoardButtonValueChanged(app, event)
+            if app.DrawBoardButton.Value==true
+                Board(app)
+            end
+        end
+
+        % Value changed function: PlanDXformpathButton
+        function PlanDXformpathButtonValueChanged(app, event)
+            if app.PlanDXformpathButton.Value ==true
+                DXpath(app)
+            end
+        end
+
+        % Value changed function: drawpathButton
+        function drawpathButtonValueChanged(app, event)
+            if app.drawpathButton.Value==true
+               draw_robot(app)
+            end
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create figure1 and hide until all components are created
+            app.figure1 = uifigure('Visible', 'off');
+            colormap(app.figure1, 'parula');
+            app.figure1.Position = [200 200 860 529];
+            app.figure1.Name = 'twolink';
+            app.figure1.Resize = 'off';
+            app.figure1.HandleVisibility = 'callback';
+            app.figure1.Tag = 'figure1';
+
+            % Create Arduino
+            app.Arduino = uimenu(app.figure1);
+            app.Arduino.Text = 'Arduino';
+            app.Arduino.Tag = 'Arduino';
+
+            % Create Connect
+            app.Connect = uimenu(app.Arduino);
+            app.Connect.MenuSelectedFcn = createCallbackFcn(app, @Connect_Callback, true);
+            app.Connect.Text = 'Connect';
+            app.Connect.Tag = 'Connect';
+
+            % Create Disconnect
+            app.Disconnect = uimenu(app.Arduino);
+            app.Disconnect.MenuSelectedFcn = createCallbackFcn(app, @Disconnect_Callback, true);
+            app.Disconnect.Text = 'Disconnect';
+            app.Disconnect.Tag = 'Disconnect';
+
+            % Create ConnectMotorMenu
+            app.ConnectMotorMenu = uimenu(app.Arduino);
+            app.ConnectMotorMenu.MenuSelectedFcn = createCallbackFcn(app, @ConnectMotor, true);
+            app.ConnectMotorMenu.Text = 'ConnectMotor';
+
+            % Create axes1
+            app.axes1 = uiaxes(app.figure1);
+            app.axes1.FontSize = 13;
+            app.axes1.Position = [1 22 532 409];
+
+            % Create Create
+            app.Create = uibutton(app.figure1, 'push');
+            app.Create.ButtonPushedFcn = createCallbackFcn(app, @Create_Callback, true);
+            app.Create.Tag = 'Create';
+            app.Create.FontSize = 11;
+            app.Create.Position = [666 453 134 32];
+            app.Create.Text = 'Create Robot';
+
+            % Create PlanDXformpathButton
+            app.PlanDXformpathButton = uibutton(app.figure1, 'state');
+            app.PlanDXformpathButton.ValueChangedFcn = createCallbackFcn(app, @PlanDXformpathButtonValueChanged, true);
+            app.PlanDXformpathButton.Text = 'Plan DXform path';
+            app.PlanDXformpathButton.FontSize = 11;
+            app.PlanDXformpathButton.Position = [661 282 132 38];
+
+            % Create DrawBoardButton
+            app.DrawBoardButton = uibutton(app.figure1, 'state');
+            app.DrawBoardButton.ValueChangedFcn = createCallbackFcn(app, @DrawBoardButtonValueChanged, true);
+            app.DrawBoardButton.Text = 'Draw Board';
+            app.DrawBoardButton.Position = [654 374 146 38];
+
+            % Create drawpathButton
+            app.drawpathButton = uibutton(app.figure1, 'state');
+            app.drawpathButton.ValueChangedFcn = createCallbackFcn(app, @drawpathButtonValueChanged, true);
+            app.drawpathButton.Text = 'draw path';
+            app.drawpathButton.Position = [654 224 146 38];
+
+            % Show the figure after all components are created
+            app.figure1.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = new_board
+
+            runningApp = getRunningApp(app);
+
+            % Check for running singleton app
+            if isempty(runningApp)
+
+                % Create UIFigure and components
+                createComponents(app)
+
+                % Register the app with App Designer
+                registerApp(app, app.figure1)
+            else
+
+                % Focus the running singleton app
+                figure(runningApp.figure1)
+
+                app = runningApp;
+            end
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.figure1)
+        end
+    end
+end
