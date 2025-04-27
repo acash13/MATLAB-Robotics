@@ -21,8 +21,8 @@ A collection of robotics-related projects and algorithms implemented primarily i
 3. Run the desired scripts (e.g., DH optimization, path planning, or Tic-Tac-Toe).
 
 ## Requirements
--MATLAB (recommended version: R2021a or later)
--(Optional) Python 3.x for Python scripts
+- MATLAB (recommended version: R2021a or later)
+- (Optional) Python 3.x for Python scripts
 
 # Contributing
 Contributions, issues, and feature requests are welcome! Feel free to open a pull request or submit an issue.
