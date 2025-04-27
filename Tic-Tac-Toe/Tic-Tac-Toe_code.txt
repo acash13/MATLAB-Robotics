@@ -1,0 +1,1407 @@
+classdef tic_tac_toe_ros_final_11 < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        figure1                  matlab.ui.Figure
+        Arduino                  matlab.ui.container.Menu
+        Connect                  matlab.ui.container.Menu
+        Disconnect               matlab.ui.container.Menu
+        ConnectMotorMenu         matlab.ui.container.Menu
+        RoscontrolLabel          matlab.ui.control.Label
+        slavenodeButton          matlab.ui.control.StateButton
+        masternodeButton         matlab.ui.control.StateButton
+        masterButton             matlab.ui.control.StateButton
+        slaveButton              matlab.ui.control.StateButton
+        RestgameButton           matlab.ui.control.StateButton
+        Label_10                 matlab.ui.control.Label
+        Label_9                  matlab.ui.control.Label
+        Label_8                  matlab.ui.control.Label
+        Label_7                  matlab.ui.control.Label
+        Label_6                  matlab.ui.control.Label
+        Label_5                  matlab.ui.control.Label
+        Label_4                  matlab.ui.control.Label
+        Label_3                  matlab.ui.control.Label
+        Label_2                  matlab.ui.control.Label
+        Label_1                  matlab.ui.control.Label
+        Button_9                 matlab.ui.control.StateButton
+        Button_8                 matlab.ui.control.StateButton
+        Button_7                 matlab.ui.control.StateButton
+        Button_6                 matlab.ui.control.StateButton
+        Button_5                 matlab.ui.control.StateButton
+        Button_4                 matlab.ui.control.StateButton
+        Button_3                 matlab.ui.control.StateButton
+        Button_2                 matlab.ui.control.StateButton
+        Button_1                 matlab.ui.control.StateButton
+        StartGameButton          matlab.ui.control.StateButton
+        OButton                  matlab.ui.control.StateButton
+        XButton                  matlab.ui.control.StateButton
+        PlayertwoXDropDown       matlab.ui.control.DropDown
+        PlayertwoLabel           matlab.ui.control.Label
+        PlayeroneODropDown       matlab.ui.control.DropDown
+        PlayeroneODropDownLabel  matlab.ui.control.Label
+        HardwareMove             matlab.ui.control.Button
+        Create                   matlab.ui.control.Button
+        slider2                  matlab.ui.control.Slider
+        slider1                  matlab.ui.control.Slider
+        axes1                    matlab.ui.control.UIAxes
+    end
+
+    
+    properties (Access = private)
+        device =[] % Arduino connection
+        robot =[] % Connection to the robot via Serial Link
+        S=[];
+        S1=[]
+        S3=[]
+        jointangle =[0 0 ];
+        data_available = false;
+        base_joint = 0;
+        update_board
+        player
+        Chad = 0
+        Bard = 0
+        Human
+        change =0;
+        shouldCallFunction = 1
+        shouldCallFunction1 =1
+        shouldCallFunction3 =0
+        X
+        Y
+        Button
+        isButtonPressed = false;
+        ros = 0
+        pub1
+        msg1
+        sub1
+        pub2
+        msg2
+        sub2
+        str_martix
+        msg3
+        
+        
+    end
+
+    methods (Access = private)
+        function Board(app)
+            % points = 15;
+            points = 5;
+            top_point= 6;
+            bottem_point= -6;
+
+            vertical= -10; % Center x-coordinate
+            horizontal=7; % Center y-coordinate
+            shift =2; % distance between lines4
+
+
+            disp("line1")
+            xn1 = vertical * ones(1, points) - shift;
+            yn1 = linspace(horizontal + bottem_point, horizontal + top_point, points);
+            %app.S3.writePosition(.5)
+            for i = 1:length(xn1)
+                U = [0 -1 0 xn1(i);1 0 0 yn1(i);0 0 1 0;0 0 0 1];
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(xn1(i), yn1(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                   
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                    
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                %app.S.writePosition(r1)
+                %app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    %app.S3.writePosition(.2)
+                end
+
+            end
+            %app.S3.writePosition(.5);
+            disp("line2")
+            xn2 = vertical * ones(1, points) + shift;
+            yn2 = linspace(horizontal + bottem_point, horizontal + top_point, points);
+            for i = 1:length(xn2)
+                U = [0 -1 0 xn2(i);1 0 0 yn2(i);0 0 1 0;0 0 0 1];
+
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(xn2(i), yn2(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                    
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                   
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                %app.S.writePosition(r1);
+                %app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    %app.S3.writePosition(.2)
+                end
+            end
+            % % % %
+            %app.S3.writePosition(.5);
+            disp("line3")
+            xn3 = linspace(vertical + bottem_point, vertical + top_point, points);
+            yn3 = horizontal * ones(1, points) - shift;
+            for i = 1:length(xn3)
+                U = [0 -1 0 xn3(i);1 0 0 yn3(i);0 0 1 0;0 0 0 1];
+
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(xn3(i), yn3(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                    
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                   
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                %app.S.writePosition(r1);
+                %app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    %%app.S3.writePosition(.2)
+                end
+            end
+            % %
+            disp("line4")
+            %app.S3.writePosition(.5);
+            xn4 = linspace(vertical + bottem_point, vertical + top_point, points);
+            yn4 = horizontal * ones(1, points) + shift;
+            for i = 1:length(xn4)
+                U = [0 -1 0 xn4(i);1 0 0 yn4(i);0 0 1 0;0 0 0 1];
+
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(xn4(i), yn4(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                    
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                    
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                %app.S.writePosition(r1);
+                %app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    %%app.S3.writePosition(.2)
+                end
+            end
+            %app.S3.writePosition(.5);
+        end
+
+        function Circle(app)
+            points=15;
+            radius = 1.5;      % Radius of the circle
+            center_x = app.X;
+            center_y= app.Y;
+            theta = linspace(0, 2*pi,points);  % Parameter to trace the circle
+
+            % Compute the x and y coordinates of the circle
+            x = center_x+radius*cos(theta);
+            y = center_y+radius*sin(theta);
+
+            %app.S3.writePosition(.5);
+            for i = 1:length(theta)
+                U = [0 -1 0 x(i);1 0 0 y(i);0 0 1 0;0 0 0 1];
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(x(i), y(i),'r.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                    
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                    
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                %app.S.writePosition(r1);
+                %app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    %%app.S3.writePosition(.2)
+                end
+
+            end
+            %app.S3.writePosition(.5);
+        end
+
+        function Letter_X(app)
+            points =10;
+            left_point=-1.5;
+            right_point=1.5;
+            %         y_shift = 11;
+            %         x_shift=-14;
+            x_shift=app.X;
+            y_shift=app.Y;
+            % Create x and y coordinates for the first diagonal (/)
+
+            x_origin  = linspace(left_point, right_point, points);
+            x = x_origin +  x_shift;
+            y1n = x_origin + y_shift;
+            y2n = -x_origin + y_shift;
+            %app.S3.writePosition(.5);
+            for i = 1:length(x)
+                U = [0 -1 0 x(i);1 0 0 y1n(i);0 0 1 0;0 0 0 1];
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(x(i), y1n(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                    
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                    
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                %app.S.writePosition(r1);
+                %app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    %%app.S3.writePosition(.2)
+                end
+
+            end
+
+            %app.S3.writePosition(.5);
+            hold on
+            for i = 1:length(x)
+                U = [0 -1 0 x(i);1 0 0 y2n(i);0 0 1 0;0 0 0 1];
+                Q = deg2rad([52.93 102.8]); % Initial guess
+                jointangles = app.robot.ikine(U, 'mask', [1 1 0 0 0 0],'q0',Q);
+                % Forward kinematics to plot the robot
+                hold on
+                plot(x(i), y2n(i),'k.', 'MarkerSize', 8);
+                app.robot.plot([jointangles(1) jointangles(2)]);  % Plot the robot
+                y1=0.005555555555556*rad2deg(jointangles(1))+0;
+                y2=0.005555555555556*rad2deg(jointangles(2))+0;
+                if y1 > 1
+                    y1 = 1;
+                elseif y1 < 0
+                    y1 = 0;
+                else
+                    
+                end
+
+                if y2 > 1
+                    y2 = 1;
+                elseif y2 < 0
+                    y2 = 0;
+                else
+                    
+                end
+                r1 =1-y1;
+                r2= 1-y2;
+                %app.S.writePosition(r1);
+                %app.S1.writePosition(r2)
+                if i==1
+                    pause(2)
+                    %%app.S3.writePosition(.2)
+                end
+            end
+            %app.S3.writePosition(.5);
+        end
+
+        function Chad_gpt(app)
+       
+            % OpenAI API Configuration
+            api_key = "enter in your API key here";
+            model = 'gpt-4'; % Choose the specific GPT-4 version
+            api_url = "https://api.openai.com/v1/chat/completions";
+            headers = {
+                'Content-Type' 'application/json';
+                'Authorization' ['Bearer ' api_key];
+                };
+         
+            board = mat2str(app.update_board);
+            
+            prompt ="playing a game of tic-tac-toe. board ="+board+".The board matrix shows the position of previous moves. O is 1, and X is -1.the board position is from 1 to 9.martix Index is[1 2 3;4 5 6;7 8 9]. If you are O what is your next move?You must pick empty spot(0) do not pick a spot that already has a 1 or -1. ONLY write out:New_position=? . New_position is the board position.";
+            % response = callChatGPT(prompt, api_url, headers, model, api_key);
+
+            body = struct( ...
+                'model', model, ...
+                'messages', { {struct('role', 'user', 'content', prompt)} } ...
+                );
+
+            % Define options for the web request, including the API key header
+            options = weboptions('MediaType', 'application/json', ...
+                'RequestMethod', 'post', ...
+                'Timeout', 15, ...
+                'HeaderFields', {'Authorization', ['Bearer ' api_key]});
+
+            % Send the POST request to the OpenAI API
+            pause(2);
+            try
+                response = webwrite(api_url, body, options);
+                pause(2);
+                % Extract and display the message content from the choices
+                if isfield(response, 'choices') && ~isempty(response.choices)
+                    answer = response.choices(1).message.content; % Use struct indexing (.)
+                    disp("answer from chad gpt:");
+                    % disp(message_content); % Display the model's response
+                else
+                    disp('No choices found in the response.');
+                end
+
+            catch e
+                % Display detailed error information
+                disp(['Error communicating with OpenAI API: ', e.message]);
+                disp("Error Identifier:");
+                disp(e.identifier);
+
+                disp("Error Stack:");
+                disp(e.stack(1)); % Display the first entry in the stack trace
+
+                % Return empty response in case of error
+                response = '';
+            end
+          
+            answer = response.choices(1).message.content;
+            disp('chad_gpt answer:');
+            disp(answer)
+            postion_pattern = 'New_position=(\d+)';
+            postion_match = regexp(answer, postion_pattern, 'tokens');
+            postion = str2double(postion_match{1}{1});  % Convert string to number
+            disp('Position:');
+            disp(postion);
+            % app.OButton.Value = true;
+           if postion ==1
+                app.update_board(1, 1) = 1;
+                app.Button_1.Value =true;
+            elseif postion==2
+                app.update_board(1, 2)= 1;
+                app.Button_2.Value =true;
+            elseif postion==3
+                app.update_board(1, 3)= 1;
+                app.Button_2.Value =true;
+            elseif postion==4
+                app.update_board(2, 1)= 1;
+                app.Button_4.Value =true;
+            elseif postion==5
+                app.update_board(2, 2)= 1;
+                app.Button_5.Value =true;
+            elseif postion==6
+                app.update_board(2, 3)= 1;
+                app.Button_6.Value =true;
+            elseif postion==7
+                app.update_board(3, 1)= 1;
+                app.Button_7.Value =true;
+            elseif postion==8
+                app.update_board(3, 2)= 1;
+                app.Button_8.Value =true;
+            elseif postion==9
+                app.update_board(3, 3)= 1;
+                app.Button_9.Value =true;
+            end
+        end
+
+        function Bard_Gemini(app)
+           
+            update_board_str = mat2str(app.update_board);
+          
+            result = pyrunfile('mathlabtoPython.py', "result", martix_str=update_board_str);
+            %
+            str = string(result);
+            disp('Bard_Gemini')
+            disp(str)
+
+            % Use regular expression to find the value of New_position
+            pattern = "New_position = (\d+)";
+            matches = regexp(str, pattern, 'tokens');
+
+            % Convert the extracted token to a number
+            if ~isempty(matches)
+                postion = str2double(matches{1}{1});
+            else
+                error('New_position not found in the string.');
+            end
+
+            % Display the result
+            disp('postion')
+            disp(postion);
+
+            % app.XButton.Value = true;
+            if postion ==1
+                app.update_board(1, 1) = -1;
+                app.Button_1.Value =true;
+            elseif postion==2
+                app.update_board(1, 2)= -1;
+                app.Button_2.Value =true;
+            elseif postion==3
+                app.update_board(1, 3)= -1;
+                app.Button_2.Value =true;
+            elseif postion==4
+                app.update_board(2, 1)= -1;
+                app.Button_4.Value =true;
+            elseif postion==5
+                app.update_board(2, 2)= -1;
+                app.Button_5.Value =true;
+            elseif postion==6
+                app.update_board(2, 3)= -1;
+                app.Button_6.Value =true;
+            elseif postion==7
+                app.update_board(3, 1)= -1;
+                app.Button_7.Value =true;
+            elseif postion==8
+                app.update_board(3, 2)= -1;
+                app.Button_8.Value =true;
+            elseif postion==9
+                app.update_board(3, 3)= -1;
+                app.Button_9.Value =true;
+            end
+        end
+
+        function AIchange(app)
+            if app.change ==1
+                app.Bard_Gemini()
+                app.change =0;
+            end
+
+            if app.change ==2
+                app.Chad_gpt()
+                app.change =0;
+            end
+        end
+        function ros_funtion(app)
+            app.str_martix = mat2str(app.update_board);
+            app.pub2 = rospublisher('/topic2', 'std_msgs/String'); % Adjust message type as needed
+            app.msg2 = rosmessage(app.pub2); % Automatically sets the correct message type
+            app.str_martix = mat2str(app.update_board);
+            app.msg2.Data =  app.str_martix;
+            send(app.pub2, app.msg2)
+            
+           
+
+            clear  app.msg1.Data app.msg3
+            % % Receive a message
+            while true
+            app.msg3 = receive(app.sub2);
+            disp(app.msg3.Data);
+
+            break
+            
+            end
+            postion = str2double(app.msg3.Data);
+            app.XButton.Value = true;
+            if postion ==1
+                app.update_board(1, 1) = -1;
+                app.Button_1.Value =true;
+            elseif postion==2
+                app.update_board(1, 2)= -1;
+                app.Button_2.Value =true;
+            elseif postion==3
+                app.update_board(1, 3)= -1;
+                app.Button_2.Value =true;
+            elseif postion==4
+                app.update_board(2, 1)= -1;
+                app.Button_4.Value =true;
+            elseif postion==5
+                app.update_board(2, 2)= -1;
+                app.Button_5.Value =true;
+            elseif postion==6
+                app.update_board(2, 3)= -1;
+                app.Button_6.Value =true;
+            elseif postion==7
+                app.update_board(3, 1)= -1;
+                app.Button_7.Value =true;
+            elseif postion==8
+                app.update_board(3, 2)= -1;
+                app.Button_8.Value =true;
+            elseif postion==9
+                app.update_board(3, 3)= -1;
+                app.Button_9.Value =true;
+            end  
+        game_button(app)
+
+        end
+       
+        function check_winner(app)
+            if app.player ==2 % OButtons
+                winning_sum = 3;
+                if any(sum(app.update_board, 1) == winning_sum)
+                    %                     winner = true;
+                    app.Label_10.Text = sprintf('Player 1 wins!\n');
+                    % Check rows
+                elseif any(sum(app.update_board, 2) == winning_sum)
+                    %                     winner = true;
+                    app.Label_10.Text = sprintf('Player 1 wins!\n');
+                    % Check  diagonal
+                elseif trace(app.update_board) == winning_sum
+                    %                     winner = true;
+                    app.Label_10.Text = sprintf('Player 1 wins!\n');
+                    % Check -diagonal
+                elseif trace(flipud(app.update_board)) == winning_sum
+                    %                     winner = true;
+                    app.Label_10.Text = sprintf('Player 1 wins!\n');
+                    % app.RestgameButtonValueChanged()
+                else
+                    app.Label_10.Text = sprintf('Player 2 turn!\n');
+                    app.XButton.Value = true;
+                    if app.Human==1
+                        app.change =0;
+                    end
+
+                    app.shouldCallFunction3= 1;
+                    if app.ros ==1 && app.shouldCallFunction3== 1
+                        app.shouldCallFunction3= 0;
+                        ros_funtion(app)
+                        app.shouldCallFunction3= 1;
+                    end
+                    app.shouldCallFunction = 1;
+                    if app.shouldCallFunction== 1  && app.Bard==1 %BARD
+                        app.shouldCallFunction = 0;
+                        % app.Label_11.Text = sprintf('Bard_Gemini_test');
+                        app.change =1;
+                        game_button(app)
+                        app.shouldCallFunction = 1;
+                    end
+
+                end
+
+            elseif app.player == -2 % XButton
+                winning_sum = -3;
+                if any(sum(app.update_board, 1) == winning_sum)
+                    %                     winner = true;
+                    app.Label_10.Text = sprintf('Player 2 wins!\n');
+                    % Check rows
+                elseif any(sum(app.update_board, 2) == winning_sum)
+                    %                     winner = true;
+                    app.Label_10.Text = sprintf('Player 2 wins!\n');
+                    % Check  diagonal
+                elseif trace(app.update_board) == winning_sum
+                    %                     winner = true;
+                    app.Label_10.Text = sprintf('Player 2 wins!\n');
+                    % Check -diagonal
+                elseif trace(flipud(app.update_board)) == winning_sum
+                    %                     winner = true;
+                    app.Label_10.Text = sprintf('Player 2 wins!\n');
+                    % app.RestgameButtonValueChanged()
+                else
+                    app.Label_10.Text = sprintf('Player 1 turn!\n');
+                    app.OButton.Value = true;
+                    if app.Human ==1
+                      app.change =0;
+                    end
+                    app.shouldCallFunction1 = 1;
+                    if app.shouldCallFunction1== 1  && app.Chad==1  % CHAD
+                        app.shouldCallFunction1 = 0;
+                        app.change =2;
+                        app.shouldCallFunction1 = 1;
+                        game_button(app)
+
+                    end
+                    
+                end
+            end
+        end
+
+        function rest(app)
+            app.Label_1.Text = sprintf('');
+            app.Label_2.Text = sprintf('');
+            app.Label_3.Text = sprintf('');
+            app.Label_4.Text = sprintf('');
+            app.Label_5.Text = sprintf('');
+            app.Label_6.Text = sprintf('');
+            app.Label_7.Text = sprintf('');
+            app.Label_8.Text = sprintf('');
+            app.Label_9.Text = sprintf('');
+            cla(app.axes1, 'reset')
+            app.StartGameButton.Value =false;
+            app.update_board =[0 0 0,0 0 0,0 0 0];
+        end
+
+    end
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Menu selected function: Connect
+        function Connect_Callback(app, event)
+            com = char (inputdlg ('What COM Port?' , 'COM Select', 1, {'COM11'}));
+            try
+                app.device = arduino (com, 'uno', 'libraries', 'Servo');
+            catch
+                msgbox ('Port failed', com, 'Error');
+                return;
+            end
+            app.data_available = true;
+            msgbox ('Port successfully opened');
+        end
+
+        % Button pushed function: Create
+        function Create_Callback(app, event)
+            L(1) = Link ('d',2, 'a', 10, 'alpha', 0,'offset',0);%deg2rad(18.435));
+            L(2) = Link ('d', 0.6, 'a',11, 'alpha', 0,'offset',0);%deg2rad(19));
+            L(1).qlim = [0 pi];           % Joint 1: 0 to pi
+            L(2).qlim = [pi/2 3*pi/2];     % Joint 2: pi/2 to 3*pi/2
+            app.robot = SerialLink(L, 'name', '2-Link Robot');
+            app.robot.plot (app.jointangle);
+
+        end
+
+        % Menu selected function: Disconnect
+        function Disconnect_Callback(app, event)
+            try
+                app.device.delete;
+            catch
+                msgbox('someing went wrong with port close.')
+                return;
+            end
+            msgbox ('Device deleted');
+            
+            
+        end
+
+        % Menu selected function: ConnectMotorMenu
+        function ConnectMotor(app, event)
+            if (app.data_available)
+                %                 app.S = app.device.servo ('D3','MinPulseDuration',1.5e-3,'MaxPulseDuration',2e-3);
+                app.S = app.device.servo( 'D3', 'MinPulseDuration', 660e-6, 'MaxPulseDuration', 2425e-6);
+                app.S1 = app.device.servo( 'D5', 'MinPulseDuration', 660e-6, 'MaxPulseDuration', 2425e-6);
+                app.S3 = app.device.servo('D6', 'MinPulseDuration', 1500e-6, 'MaxPulseDuration', 1900e-6);
+            end
+        end
+
+        % Value changed function: PlayeroneODropDown, PlayertwoXDropDown, 
+        % ...and 1 other component
+        function StartGameButtonValueChanged(app, event)
+
+            if app.StartGameButton.Value ==true
+                app.robot.plot (app.jointangle);
+                xlim([-20 25])
+                ylim([-10 20])
+                app.update_board=[ 0  0  0 ; 0  0  0 ; 0  0  0 ];
+                update_board_str = mat2str(app.update_board);
+                app.Board()
+                switch app.PlayeroneODropDown.Value
+                    case 'Human1'
+                        app.Human=1;
+                    case 'Chad gpt'
+                        app.Chad=1;
+                end
+                switch app.PlayertwoXDropDown.Value
+                    case 'Human2'
+                        app.Human=1;
+                    case 'Bard'
+                        app.Bard=1;
+                    case 'Ros Human2'
+                        app.ros=1;
+                        
+                end
+               app.Label_10.Text = sprintf('Player 1 turn!\n');
+               app.OButton.Value = true;
+                if strcmp(app.PlayeroneODropDown.Value, 'Chad gpt') && strcmp(app.PlayertwoXDropDown.Value, 'Human2')
+                    app.change =2;
+                    app.game_button()
+
+                end
+                if strcmp(app.PlayertwoXDropDown.Value, 'Bard') && strcmp(app.PlayeroneODropDown.Value, 'Chad gpt')
+                    app.change =2;
+                    app.game_button()
+                    disp('test')
+                end
+            end
+
+
+        end
+
+        % Value changed function: Button_1, Button_2, Button_3, Button_4, 
+        % ...and 7 other components
+        function game_button(app, event)
+
+            %   if (app.OButton.Value || app.XButton.Value) && (app.Button_1.Value || app.Button_2.Value ...
+            %           || app.Button_3.Value || app.Button_4.Value ||app.Button_5.Value || app.Button_6.Value ...
+            %           || app.Button_7.Value || app.Button_8.Value || app.Button_9.Value) == true
+            %             %        app.update_board=ones(3);
+
+
+app.AIchange()
+
+            if (app.OButton.Value && app.Button_1.Value)
+                app.Label_1.Text = sprintf('O');
+                app.OButton.Value = false;
+                app.Button_1.Value = false;
+                app.update_board(1,1)=1;
+                app.X =-14;app.Y=11;
+                app.Circle()
+                disp(app.update_board)
+                app.player = 2;
+                app.check_winner()
+            elseif (app.OButton.Value && app.Button_2.Value)
+                app.Label_2.Text = sprintf('O');
+                app.OButton.Value = false;
+                app.Button_2.Value = false;
+                app.update_board(1,2)=1;
+                app.X =-10;app.Y=11;
+                app.Circle()
+                disp(app.update_board)
+                app.player = 2;
+                app.check_winner()
+            elseif (app.OButton.Value && app.Button_3.Value)
+                app.Label_3.Text = sprintf('O');
+                app.OButton.Value = false;
+                app.Button_3.Value = false;
+                app.update_board(1,3)=1;
+                app.X =-6;app.Y=11;
+                app.Circle()
+                disp(app.update_board)
+                app.player = 2;
+                app.check_winner()
+            elseif (app.OButton.Value && app.Button_4.Value)
+                app.Label_4.Text = sprintf('O');
+                app.OButton.Value = false;
+                app.Button_4.Value = false;
+                app.update_board(2,1)=1;
+                app.X =-14;app.Y=7;
+                app.Circle()
+                disp(app.update_board)
+                app.player = 2;
+                app.check_winner()
+            elseif (app.OButton.Value && app.Button_5.Value)
+                app.Label_5.Text = sprintf('O');
+                app.OButton.Value = false;
+                app.Button_5.Value = false;
+                app.update_board(2,2)=1;
+                app.X =-10;app.Y=7;
+                app.Circle()
+                disp(app.update_board)
+                app.player = 2;
+                app.check_winner()
+            elseif (app.OButton.Value && app.Button_6.Value)
+                app.Label_6.Text = sprintf('O');
+                app.OButton.Value = false;
+                app.Button_6.Value = false;
+                app.update_board(2,3)=1;
+                app.X =-6;app.Y=7;
+                app.Circle()
+                disp(app.update_board)
+                app.player = 2;
+                app.check_winner()
+            elseif (app.OButton.Value && app.Button_7.Value)
+                app.Label_7.Text = sprintf('O');
+                app.OButton.Value = false;
+                app.Button_7.Value = false;
+                app.update_board(3,1)=1;
+                app.X =-14;app.Y=3;
+                app.Circle()
+                disp(app.update_board)
+                app.player = 2;
+                app.check_winner()
+            elseif (app.OButton.Value && app.Button_8.Value)
+                app.Label_8.Text = sprintf('O');
+                app.OButton.Value = false;
+                app.Button_8.Value = false;
+                app.update_board(3,2)=1;
+                app.X =-10;app.Y=3;
+                app.Circle()
+                disp(app.update_board)
+                app.player = 2;
+                app.check_winner()
+            elseif (app.OButton.Value && app.Button_9.Value)
+                app.Label_9.Text = sprintf('O');
+                app.OButton.Value = false;
+                app.Button_9.Value = false;
+                app.update_board(3,3)=1;
+                app.X =-6;app.Y=3;
+                app.Circle()
+                disp(app.update_board)
+                app.player = -2;
+                app.check_winner()
+
+                %% X buttons
+            elseif (app.XButton.Value && app.Button_1.Value)
+                app.Label_1.Text = sprintf('X');
+                app.XButton.Value = false;
+                app.Button_1.Value = false;
+                app.update_board(1,1)=-1;
+                app.X =-14;app.Y=11;
+                app.Letter_X()
+                disp(app.update_board)
+                app.player = -2;
+                app.check_winner()
+            elseif (app.XButton.Value && app.Button_2.Value)
+                app.Label_2.Text = sprintf('X');
+                app.XButton.Value = false;
+                app.Button_2.Value = false;
+                app.update_board(1,2)=-1;
+                app.X =-10;app.Y=11;
+                app.Letter_X()
+                disp(app.update_board)
+                app.player = -2;
+                app.check_winner()
+            elseif (app.XButton.Value && app.Button_3.Value)
+                app.Label_3.Text = sprintf('X');
+                app.XButton.Value = false;
+                app.Button_3.Value = false;
+                app.update_board(1,3)=-1;
+                app.X =-6;app.Y=11;
+                app.Letter_X()
+                app.player = -2;
+                disp(app.update_board)
+                app.check_winner()
+            elseif (app.XButton.Value && app.Button_4.Value)
+                app.Label_4.Text = sprintf('X');
+                app.XButton.Value = false;
+                app.Button_4.Value = false;
+                app.update_board(2,1)=-1;
+                app.X =-14;app.Y=7;
+                app.Letter_X()
+                disp(app.update_board)
+                app.player = -2;
+                app.check_winner()
+            elseif (app.XButton.Value && app.Button_5.Value)
+                app.Label_5.Text = sprintf('X');
+                app.XButton.Value = false;
+                app.Button_5.Value = false;
+                app.update_board(2,2)=-1;
+                app.X =-10;app.Y=7;
+                app.Letter_X()
+                disp(app.update_board)
+                app.player = -2;
+                app.check_winner()
+            elseif (app.XButton.Value && app.Button_6.Value)
+                app.Label_6.Text = sprintf('X');
+                app.XButton.Value = false;
+                app.Button_6.Value = false;
+                app.update_board(2,3)=-1;
+                app.X =-6;app.Y=7;
+                app.Letter_X()
+                disp(app.update_board)
+                app.player = -2;
+                app.check_winner()
+            elseif (app.XButton.Value && app.Button_7.Value)
+                app.Label_7.Text = sprintf('X');
+                app.XButton.Value = false;
+                app.Button_7.Value = false;
+                app.update_board(3,1)=-1;
+                app.X =-14;app.Y=3;
+                app.Letter_X()
+                disp(app.update_board)
+                app.player = -2;
+                app.check_winner()
+            elseif (app.XButton.Value && app.Button_8.Value)
+                app.Label_8.Text = sprintf('X');
+                app.XButton.Value = false;
+                app.Button_8.Value = false;
+                app.update_board(3,2)=-1;
+                app.X =-10;app.Y=3;
+                app.Letter_X()
+                disp(app.update_board)
+                app.player = -2;
+                app.check_winner()
+            elseif (app.XButton.Value && app.Button_9.Value)
+                app.Label_9.Text = sprintf('X');
+                app.XButton.Value = false;
+                app.Button_9.Value = false;
+                app.update_board(3,3)=-1;
+                app.X =-6;app.Y=3;
+                app.Letter_X()
+                disp(app.update_board)
+                app.player = -2;
+                app.check_winner()
+            end
+
+        
+        
+        end
+
+        % Value changed function: RestgameButton
+        function RestgameButtonValueChanged(app, event)
+
+            if app.RestgameButton.Value == true
+                app.rest()
+%                 cla(app.axes1, 'reset')
+                app.RestgameButton.Value = false;
+
+            end
+        end
+
+        % Value changed function: masterButton, masternodeButton, 
+        % ...and 2 other components
+        function Button2ValueChanged(app, event)
+            if app.masterButton.Value == true
+                rosinit
+                app.pub1 = rospublisher('/topic1', 'std_msgs/String');
+                app.msg1 = rosmessage(app.pub1);
+                app.masterButton.Value = false;
+            end
+            if app.masternodeButton.Value == true
+
+                % Subscriber node
+                app.sub1 = rossubscriber('/topic2');
+                app.masternodeButton.Value = false;
+            end
+            if app.slaveButton.Value == true
+                 disp('work')
+                 IP = string(inputdlg('Input IP Adress?' , 'Select', 1, {'172.20.10.2'}));
+                 IP_s = num2str(IP);
+                
+                 rosinit(IP_s)
+                 app.pub2 = rospublisher('/topic2', 'std_msgs/String');
+                 app.msg2 = rosmessage(app.pub2);
+                 disp(app.pub2)
+                 disp(app.msg2)
+                 
+                 app.slaveButton.Value = false;
+            end     
+                if app.slavenodeButton.Value == true
+
+                % Subscriber node
+                app.sub2 = rossubscriber('/topic1');
+                disp(app.sub2)
+                app.msg2.Data = 'Hello from Computer 2!';
+                send(app.pub2, app.msg2);
+
+                % Receive a message
+                app.msg1 = receive(app.sub2);
+                disp(app.msg1.Data);
+                app.slavenodeButton.Value = false;
+             
+            end
+            
+
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create figure1 and hide until all components are created
+            app.figure1 = uifigure('Visible', 'off');
+            colormap(app.figure1, 'parula');
+            app.figure1.Position = [200 200 860 529];
+            app.figure1.Name = 'twolink';
+            app.figure1.Resize = 'off';
+            app.figure1.HandleVisibility = 'callback';
+            app.figure1.Tag = 'figure1';
+
+            % Create Arduino
+            app.Arduino = uimenu(app.figure1);
+            app.Arduino.Text = 'Arduino';
+            app.Arduino.Tag = 'Arduino';
+
+            % Create Connect
+            app.Connect = uimenu(app.Arduino);
+            app.Connect.MenuSelectedFcn = createCallbackFcn(app, @Connect_Callback, true);
+            app.Connect.Text = 'Connect';
+            app.Connect.Tag = 'Connect';
+
+            % Create Disconnect
+            app.Disconnect = uimenu(app.Arduino);
+            app.Disconnect.MenuSelectedFcn = createCallbackFcn(app, @Disconnect_Callback, true);
+            app.Disconnect.Text = 'Disconnect';
+            app.Disconnect.Tag = 'Disconnect';
+
+            % Create ConnectMotorMenu
+            app.ConnectMotorMenu = uimenu(app.Arduino);
+            app.ConnectMotorMenu.MenuSelectedFcn = createCallbackFcn(app, @ConnectMotor, true);
+            app.ConnectMotorMenu.Text = 'ConnectMotor';
+
+            % Create axes1
+            app.axes1 = uiaxes(app.figure1);
+            app.axes1.FontSize = 13;
+            app.axes1.NextPlot = 'replace';
+            app.axes1.Tag = 'axes1';
+            app.axes1.Position = [1 246 384 284];
+
+            % Create slider1
+            app.slider1 = uislider(app.figure1);
+            app.slider1.Limits = [0 1];
+            app.slider1.MajorTicks = [];
+            app.slider1.Orientation = 'vertical';
+            app.slider1.MinorTicks = [0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1];
+            app.slider1.Tag = 'slider1';
+            app.slider1.FontSize = 11;
+            app.slider1.Position = [873 504 3 50];
+
+            % Create slider2
+            app.slider2 = uislider(app.figure1);
+            app.slider2.Limits = [0 6.28];
+            app.slider2.MajorTicks = [];
+            app.slider2.Orientation = 'vertical';
+            app.slider2.MinorTicks = [0 0.7 1.4 2.1 2.8 3.5 4.2 4.9 5.6 6.28];
+            app.slider2.Tag = 'slider2';
+            app.slider2.FontSize = 11;
+            app.slider2.Position = [873 504 3 50];
+
+            % Create Create
+            app.Create = uibutton(app.figure1, 'push');
+            app.Create.ButtonPushedFcn = createCallbackFcn(app, @Create_Callback, true);
+            app.Create.Tag = 'Create';
+            app.Create.FontSize = 11;
+            app.Create.Position = [405 437 134 32];
+            app.Create.Text = 'Create Robot';
+
+            % Create HardwareMove
+            app.HardwareMove = uibutton(app.figure1, 'push');
+            app.HardwareMove.Tag = 'HardwareMove';
+            app.HardwareMove.FontSize = 11;
+            app.HardwareMove.Position = [884 445 122 37];
+            app.HardwareMove.Text = 'HardwareMove';
+
+            % Create PlayeroneODropDownLabel
+            app.PlayeroneODropDownLabel = uilabel(app.figure1);
+            app.PlayeroneODropDownLabel.HorizontalAlignment = 'right';
+            app.PlayeroneODropDownLabel.Position = [563 363 79 22];
+            app.PlayeroneODropDownLabel.Text = 'Player one O ';
+
+            % Create PlayeroneODropDown
+            app.PlayeroneODropDown = uidropdown(app.figure1);
+            app.PlayeroneODropDown.Items = {'Human1', 'Chad gpt'};
+            app.PlayeroneODropDown.ValueChangedFcn = createCallbackFcn(app, @StartGameButtonValueChanged, true);
+            app.PlayeroneODropDown.Position = [653 363 129 22];
+            app.PlayeroneODropDown.Value = 'Human1';
+
+            % Create PlayertwoLabel
+            app.PlayertwoLabel = uilabel(app.figure1);
+            app.PlayertwoLabel.HorizontalAlignment = 'right';
+            app.PlayertwoLabel.Position = [564 318 103 22];
+            app.PlayertwoLabel.Text = 'Player two X         ';
+
+            % Create PlayertwoXDropDown
+            app.PlayertwoXDropDown = uidropdown(app.figure1);
+            app.PlayertwoXDropDown.Items = {'Human2', 'Bard', 'Ros Human2'};
+            app.PlayertwoXDropDown.ValueChangedFcn = createCallbackFcn(app, @StartGameButtonValueChanged, true);
+            app.PlayertwoXDropDown.Position = [653 318 129 22];
+            app.PlayertwoXDropDown.Value = 'Human2';
+
+            % Create XButton
+            app.XButton = uibutton(app.figure1, 'state');
+            app.XButton.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.XButton.Text = 'X';
+            app.XButton.FontSize = 30;
+            app.XButton.Position = [66 13 80 71];
+
+            % Create OButton
+            app.OButton = uibutton(app.figure1, 'state');
+            app.OButton.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.OButton.Text = 'O';
+            app.OButton.FontSize = 30;
+            app.OButton.Position = [66 95 80 71];
+
+            % Create StartGameButton
+            app.StartGameButton = uibutton(app.figure1, 'state');
+            app.StartGameButton.ValueChangedFcn = createCallbackFcn(app, @StartGameButtonValueChanged, true);
+            app.StartGameButton.Text = 'Start Game';
+            app.StartGameButton.FontSize = 11;
+            app.StartGameButton.Position = [405 371 132 38];
+
+            % Create Button_1
+            app.Button_1 = uibutton(app.figure1, 'state');
+            app.Button_1.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.Button_1.Text = '1';
+            app.Button_1.FontSize = 30;
+            app.Button_1.Position = [237 165 82 66];
+
+            % Create Button_2
+            app.Button_2 = uibutton(app.figure1, 'state');
+            app.Button_2.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.Button_2.Text = '2';
+            app.Button_2.FontSize = 30;
+            app.Button_2.Position = [326 165 82 66];
+
+            % Create Button_3
+            app.Button_3 = uibutton(app.figure1, 'state');
+            app.Button_3.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.Button_3.Text = '3';
+            app.Button_3.FontSize = 30;
+            app.Button_3.Position = [416 165 82 66];
+
+            % Create Button_4
+            app.Button_4 = uibutton(app.figure1, 'state');
+            app.Button_4.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.Button_4.Text = '4';
+            app.Button_4.FontSize = 30;
+            app.Button_4.Position = [238 91 82 66];
+
+            % Create Button_5
+            app.Button_5 = uibutton(app.figure1, 'state');
+            app.Button_5.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.Button_5.Text = '5';
+            app.Button_5.FontSize = 30;
+            app.Button_5.Position = [327 91 82 66];
+
+            % Create Button_6
+            app.Button_6 = uibutton(app.figure1, 'state');
+            app.Button_6.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.Button_6.Text = '6';
+            app.Button_6.FontSize = 30;
+            app.Button_6.Position = [416 91 82 66];
+
+            % Create Button_7
+            app.Button_7 = uibutton(app.figure1, 'state');
+            app.Button_7.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.Button_7.Text = '7';
+            app.Button_7.FontSize = 30;
+            app.Button_7.Position = [238 18 82 66];
+
+            % Create Button_8
+            app.Button_8 = uibutton(app.figure1, 'state');
+            app.Button_8.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.Button_8.Text = '8';
+            app.Button_8.FontSize = 30;
+            app.Button_8.Position = [327 18 82 66];
+
+            % Create Button_9
+            app.Button_9 = uibutton(app.figure1, 'state');
+            app.Button_9.ValueChangedFcn = createCallbackFcn(app, @game_button, true);
+            app.Button_9.Text = '9';
+            app.Button_9.FontSize = 30;
+            app.Button_9.Position = [416 18 82 66];
+
+            % Create Label_1
+            app.Label_1 = uilabel(app.figure1);
+            app.Label_1.BackgroundColor = [1 0.4118 0.1608];
+            app.Label_1.HorizontalAlignment = 'center';
+            app.Label_1.FontSize = 50;
+            app.Label_1.Position = [555 165 82 66];
+            app.Label_1.Text = '';
+
+            % Create Label_2
+            app.Label_2 = uilabel(app.figure1);
+            app.Label_2.BackgroundColor = [1 0.4118 0.1608];
+            app.Label_2.HorizontalAlignment = 'center';
+            app.Label_2.FontSize = 50;
+            app.Label_2.Position = [642 165 82 66];
+            app.Label_2.Text = '';
+
+            % Create Label_3
+            app.Label_3 = uilabel(app.figure1);
+            app.Label_3.BackgroundColor = [1 0.4118 0.1608];
+            app.Label_3.HorizontalAlignment = 'center';
+            app.Label_3.FontSize = 50;
+            app.Label_3.Position = [732 165 82 66];
+            app.Label_3.Text = '';
+
+            % Create Label_4
+            app.Label_4 = uilabel(app.figure1);
+            app.Label_4.BackgroundColor = [1 0.4118 0.1608];
+            app.Label_4.HorizontalAlignment = 'center';
+            app.Label_4.FontSize = 50;
+            app.Label_4.Position = [555 91 82 66];
+            app.Label_4.Text = '';
+
+            % Create Label_5
+            app.Label_5 = uilabel(app.figure1);
+            app.Label_5.BackgroundColor = [1 0.4118 0.1608];
+            app.Label_5.HorizontalAlignment = 'center';
+            app.Label_5.FontSize = 50;
+            app.Label_5.Position = [644 91 82 66];
+            app.Label_5.Text = '';
+
+            % Create Label_6
+            app.Label_6 = uilabel(app.figure1);
+            app.Label_6.BackgroundColor = [1 0.4118 0.1608];
+            app.Label_6.HorizontalAlignment = 'center';
+            app.Label_6.FontSize = 50;
+            app.Label_6.Position = [732 91 82 66];
+            app.Label_6.Text = '';
+
+            % Create Label_7
+            app.Label_7 = uilabel(app.figure1);
+            app.Label_7.BackgroundColor = [1 0.4118 0.1608];
+            app.Label_7.HorizontalAlignment = 'center';
+            app.Label_7.FontSize = 50;
+            app.Label_7.Position = [555 18 82 66];
+            app.Label_7.Text = '';
+
+            % Create Label_8
+            app.Label_8 = uilabel(app.figure1);
+            app.Label_8.BackgroundColor = [1 0.4118 0.1608];
+            app.Label_8.HorizontalAlignment = 'center';
+            app.Label_8.FontSize = 50;
+            app.Label_8.Position = [644 18 82 66];
+            app.Label_8.Text = '';
+
+            % Create Label_9
+            app.Label_9 = uilabel(app.figure1);
+            app.Label_9.BackgroundColor = [1 0.4118 0.1608];
+            app.Label_9.HorizontalAlignment = 'center';
+            app.Label_9.FontSize = 50;
+            app.Label_9.Position = [732 18 82 66];
+            app.Label_9.Text = '';
+
+            % Create Label_10
+            app.Label_10 = uilabel(app.figure1);
+            app.Label_10.FontSize = 14;
+            app.Label_10.Position = [14 195 208 24];
+            app.Label_10.Text = '';
+
+            % Create RestgameButton
+            app.RestgameButton = uibutton(app.figure1, 'state');
+            app.RestgameButton.ValueChangedFcn = createCallbackFcn(app, @RestgameButtonValueChanged, true);
+            app.RestgameButton.Text = 'Rest game';
+            app.RestgameButton.Position = [405 311 132 36];
+
+            % Create slaveButton
+            app.slaveButton = uibutton(app.figure1, 'state');
+            app.slaveButton.ValueChangedFcn = createCallbackFcn(app, @Button2ValueChanged, true);
+            app.slaveButton.Text = 'slave';
+            app.slaveButton.Position = [607 433 100 22];
+
+            % Create masterButton
+            app.masterButton = uibutton(app.figure1, 'state');
+            app.masterButton.ValueChangedFcn = createCallbackFcn(app, @Button2ValueChanged, true);
+            app.masterButton.Text = 'master';
+            app.masterButton.Position = [607 460 100 22];
+
+            % Create masternodeButton
+            app.masternodeButton = uibutton(app.figure1, 'state');
+            app.masternodeButton.ValueChangedFcn = createCallbackFcn(app, @Button2ValueChanged, true);
+            app.masternodeButton.Text = 'masternode';
+            app.masternodeButton.Position = [714 460 100 22];
+
+            % Create slavenodeButton
+            app.slavenodeButton = uibutton(app.figure1, 'state');
+            app.slavenodeButton.ValueChangedFcn = createCallbackFcn(app, @Button2ValueChanged, true);
+            app.slavenodeButton.Text = 'slavenode';
+            app.slavenodeButton.Position = [714 433 100 22];
+
+            % Create RoscontrolLabel
+            app.RoscontrolLabel = uilabel(app.figure1);
+            app.RoscontrolLabel.FontSize = 14;
+            app.RoscontrolLabel.FontWeight = 'bold';
+            app.RoscontrolLabel.Position = [659 498 87 32];
+            app.RoscontrolLabel.Text = {''; 'Ros control'; ''};
+
+            % Show the figure after all components are created
+            app.figure1.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = tic_tac_toe_ros_final_11
+
+            runningApp = getRunningApp(app);
+
+            % Check for running singleton app
+            if isempty(runningApp)
+
+                % Create UIFigure and components
+                createComponents(app)
+
+                % Register the app with App Designer
+                registerApp(app, app.figure1)
+            else
+
+                % Focus the running singleton app
+                figure(runningApp.figure1)
+
+                app = runningApp;
+            end
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.figure1)
+        end
+    end
+end
