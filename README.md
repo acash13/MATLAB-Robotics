@@ -15,3 +15,19 @@ A collection of robotics-related projects and algorithms implemented primarily i
 1. Clone the repository:
    ```bash
    git clone https://github.com/acash13/MATLAB-Robotics.git
+   
+2. Open MATLAB and navigate to the project folder.
+
+3. Run the desired scripts (e.g., DH optimization, path planning, or Tic-Tac-Toe).
+
+# Requirements
+-MATLAB (recommended version: R2021a or later)
+-(Optional) Python 3.x for Python scripts
+
+# Contributing
+Contributions, issues, and feature requests are welcome! Feel free to open a pull request or submit an issue.
+
+# License
+This project is open-source — feel free to use, modify, and share!
+
+
