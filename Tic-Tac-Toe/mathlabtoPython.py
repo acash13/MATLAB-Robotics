@@ -10,7 +10,7 @@ import google.generativeai as genai
 # print(newmatrix)
 # martix_str = str(newmatrix)
     # Create the generative model request
-API_KEY = 'AIzaSyDI98IF5NSXAY_wc0zAHGaS2LNs-l0IwI4'
+API_KEY = 'enter in API key here'
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel("gemini-1.5-flash")
 print(martix_str)
